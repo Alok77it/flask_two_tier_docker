@@ -1,102 +1,162 @@
-# 🚀 Flask + MySQL Two-Tier Dockerized Application
+# 🚀 Flask + MySQL Two-Tier Application using Docker (Without Compose)
 
-A simple yet powerful two-tier web application using **Flask** for the backend and **MySQL** as the database. Both services are containerized using **Docker** and connected through a custom **Docker network**, demonstrating real-world DevOps practices for service isolation, networking, and persistent data management.
-
----
-
-## 🧰 Technologies Used
-
-- 🐍 Python (Flask)
-- 🐬 MySQL 8.0
-- 🐳 Docker & Docker Compose
-- 📦 Docker Volumes for persistence
-- 🔄 Docker Networking
+A lightweight two-tier web application that uses **Flask** (Python) for frontend/backend logic and **MySQL** as the database. Both run in Docker containers, networked via a custom Docker network—**no `docker-compose` needed!**
 
 ---
 
-## 📁 Project Structure
+## 📸 Features
+
+- 🧾 User form to submit **Name** and **Date of Birth**
+- 💾 Automatically creates a `users` table in MySQL if it doesn't exist
+- 🔁 Data insertion and retrieval using Python's `mysql-connector-python`
+- 🌐 Separate page (`/users`) to list all submitted users
+- 🐳 Fully containerized with custom Docker networking
+
+---
+
+## 🗂️ Project Structure
 
 ```
 flask_two_tier_docker/
 ├── app/
-│   ├── app.py               # Flask application
+│   ├── app.py               # Flask app with HTML form + DB logic
 │   └── requirements.txt     # Python dependencies
-│
-├── Dockerfile               # Docker build config for Flask
-├── docker-compose.yml       # Defines and connects Flask + MySQL services
-└── README.md                # Project documentation
+├── Dockerfile               # Flask Docker build file
+└── README.md                # Project documentation (this file)
 ```
 
 ---
 
-## 🔧 Prerequisites
+## 🧠 How It Works
 
-Before running this project, ensure you have the following installed:
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+1. **Two containers** are run manually:
+    - One for the **Flask app**
+    - One for **MySQL DB**
+2. Both attach to the same custom Docker network (`app_net`).
+3. The Flask app:
+    - Connects to MySQL via container name `mysql_db`
+    - Auto-creates `users` table if missing
+    - Accepts form data (`name`, `dob`) via POST
+    - Inserts data into MySQL
+    - `/users` route lists all users
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ Prerequisites
 
-### Step-by-Step Instructions
+- Docker installed and running
+- No need for Docker Compose or extra tools
 
-#### 1. Clone the Repository
+---
+
+## ⚙️ Setup & Run (Step-by-Step)
+
+> **Run these commands from your project root**
+
+### 🧱 1. Build Flask Image
 
 ```bash
-git clone https://github.com/Alok77it/flask_two_tier_docker.git
-cd flask_two_tier_docker
+docker build -t flask-app .
 ```
 
-#### 2. Build and Run with Docker Compose
+### 🌐 2. Create Custom Docker Network
 
 ```bash
-docker-compose up --build
+docker network create app_net
 ```
 
-#### 3. Access the Flask App
+### 🐬 3. Run MySQL Container
 
-Open your browser and go to:
-
+```bash
+docker run -d \
+  --name mysql_db \
+  --network app_net \
+  -e MYSQL_ROOT_PASSWORD=rootpassword \
+  -e MYSQL_DATABASE=flask_db \
+  -v mysql_data:/var/lib/mysql \
+  mysql:8.0
 ```
-http://localhost:5000
-```
 
-You should see a response similar to:
+### 🔥 4. Run Flask Container
 
-```
-Database time: 2025-05-22 13:45:00
+```bash
+docker run -d \
+  --name flask_app \
+  --network app_net \
+  -p 5000:5000 \
+  flask-app
 ```
 
 ---
 
-## ⚙️ How It Works
+### 🌐 Access the Application
 
-- The `flask_app` service is built from the Dockerfile, installs Python requirements, and starts the Flask server.
-- The `mysql_db` service uses the official MySQL image, with environment variables to initialize the database and password.
-- Docker creates a custom bridge network `app_net` so both services can communicate internally.
-- Flask connects to MySQL using the internal hostname `mysql_db`.
+- **Form:** [http://localhost:5000](http://localhost:5000)
+- **User List:** [http://localhost:5000/users](http://localhost:5000/users)
 
 ---
 
-## ✅ Future Improvements
+## 🧪 Example
 
-- 🔐 Use `.env` for managing secrets securely
-- 🔁 Add retry logic in Flask for MySQL connection during startup
-- 🔍 Add a health check endpoint for container monitoring
-- ⚙️ CI/CD pipeline integration (GitHub Actions, Jenkins, etc.)
+### 👤 Add a User
+
+- Name: `Alice`
+- DOB: `1995-07-14`
+- Submit the form → redirected to `/users`
+
+### 📋 View Users
+
+| ID | Name  | Date of Birth |
+|----|-------|---------------|
+| 1  | Alice | 1995-07-14    |
 
 ---
 
-## 📜 License
+## 🧹 Cleanup
 
-MIT License – you're free to use and modify this project as needed.
+```bash
+docker stop flask_app mysql_db
+docker rm flask_app mysql_db
+docker volume rm mysql_data
+docker network rm app_net
+```
 
 ---
 
-## 🙌 Author
+## 📦 Dependencies
 
-Made with ❤️ by Alok Trivedi
+- Python 3.9
+- Flask
+- mysql-connector-python
+- MySQL 8.0 Docker Image
 
-If you found this project useful, feel free to ⭐ the repository and share feedback or suggestions via Issues.
+---
+
+## 📌 Notes
+
+- The MySQL host inside the Flask app must be set to `mysql_db` (the container name), **not** `localhost`.
+- Table is auto-created on the first request if it doesn't exist.
+
+---
+
+## 📈 Future Enhancements
+
+- ✅ Validation and error handling
+- 🔐 Login/auth system
+- 📜 Pagination of users
+- 📊 Export to CSV or Excel
+- 🌍 Deploy to cloud (AWS/GCP)
+
+---
+
+## 🤝 Author
+
+**Alok Trivedi**  
+[GitHub](https://github.com/Alok77it) | [LinkedIn](https://www.linkedin.com/in/aloktrivedi/)
+
+---
+
+## 🏁 License
+
+This project is licensed under the MIT License.
+---
